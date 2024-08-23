@@ -3,23 +3,42 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Unity.IO;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
+    [SerializeField] Text bestScoreText;
+
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+
+    public string bestScoreName;
+    public int bestScore;
+
+    private string name;
+
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
 
-    
-    // Start is called before the first frame update
+    private void Awake()
+    {
+        //SaveData sd = new SaveData();
+        //sd.bestScore = 0;
+        //sd.bestScoreName = "Nikdo";
+        //string json = JsonUtility.ToJson(sd);
+        //File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+
+        LoadBestScore();
+        name = MenuManager.Instance.name;
+    }
+
     void Start()
     {
         const float step = 0.6f;
@@ -57,6 +76,7 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                SaveBestScore();
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
         }
@@ -72,5 +92,37 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+    }
+
+    public class SaveData
+    {
+        public string bestScoreName;
+        public int bestScore;
+    }
+
+    public void SaveBestScore()
+    {
+        if(m_Points > bestScore)
+        {
+            SaveData sd = new SaveData();
+            sd.bestScore = m_Points;
+            sd.bestScoreName = name;
+            string json = JsonUtility.ToJson(sd);
+            File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+        }
+    }
+
+    public void LoadBestScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            bestScore = data.bestScore;
+            bestScoreName = data.bestScoreName;
+            bestScoreText.text = $"Best score : {data.bestScoreName} : {data.bestScore}";
+        }
     }
 }
